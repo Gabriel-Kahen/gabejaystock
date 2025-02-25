@@ -1,0 +1,14 @@
+steps:
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud functions deploy run_simulation_function \
+          --runtime python39 \
+          --trigger-http \
+          --allow-unauthenticated \
+          --entry-point run_simulation_handler \
+          --memory=512MB \
+          --project gabejaystock
+timeout: 600s
