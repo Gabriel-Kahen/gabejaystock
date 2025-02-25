@@ -10,11 +10,8 @@ import yfinance as yf
 from datetime import datetime as dt
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
-from get_data import get_data  # Ensure this function is updated similarly if needed
 from google.cloud import storage
 
-# Global variables for simulation
-# These file names now represent the blob names in your Cloud Storage bucket.
 DATA_FILE = "data/yfinance_data.csv"
 TRADE_LOG_FILE = "data/trade_log.csv"
 OPEN_POSITIONS_FILE = "data/open_positions.json"
@@ -69,11 +66,16 @@ def load_initial_data():
     Loads the CSV file (stored in Cloud Storage) and converts it to long format.
     Expected CSV structure remains the same.
     """
+    
+    get_data()
+    
     csv_text = download_blob_as_string(DATA_FILE)
     # Read header info (first 3 rows)
     header_info = pd.read_csv(io.StringIO(csv_text), nrows=3, header=None)
     n_tickers = 100
     metrics = ["Close", "High", "Low", "Open", "Volume"]
+    
+    
 
     # Extract tickers from row 1 (columns 1 to 1+n_tickers)
     tickers = header_info.iloc[1, 1:1+n_tickers].tolist()
@@ -157,7 +159,7 @@ def write_trade_log():
             entry_time = entry_time.strftime("%Y-%m-%d %H:%M:%S")
         if exit_time and isinstance(exit_time, dt):
             exit_time = exit_time.strftime("%Y-%m-%d %H:%M:%S")
-        writer.writerow([stock, entry_time, exit_time, profit_loss])
+        writer.writerow([stock, entry_time, exit_time, profit_loss.item()])
     
     upload_blob_from_string(TRADE_LOG_FILE, output.getvalue(), content_type='text/csv')
     print(f"Trade log updated in {TRADE_LOG_FILE} in bucket {BUCKET_NAME}")
@@ -213,6 +215,20 @@ def select_trades(model, df_hist, num_trades=3):
     print("Selected trades for this cycle:")
     print(top_trades[['Ticker', 'Close', 'PredictedReturn']])
     return top_trades
+
+def get_data():
+    # 1. Download the data
+    data = yf.download(TICKERS, period='5d', interval='15m')
+
+    csv_data = data.to_csv(index=True)
+
+    client = storage.Client()
+    bucket = client.bucket(BUCKET_NAME)
+    blob = bucket.blob(DATA_FILE)
+
+    blob.upload_from_string(csv_data, content_type='text/csv')
+
+    print(f"Data uploaded to gs://{BUCKET_NAME}/{DATA_FILE}")
 
 def sell_positions(current_time):
     """
@@ -311,7 +327,13 @@ def run_simulation_handler(request):
     return 'TEST', 200
 
 def main():
-    run_simulation()
+    while(True):
+        if(is_market_open):
+            run_simulation()
+        else:
+            print("Market not open")
+        print("waiting...")
+        time.sleep(15 * 60)
 
 if __name__ == "__main__":
     main()
