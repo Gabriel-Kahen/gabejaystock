@@ -11,4 +11,4 @@ steps:
           --entry-point run_simulation_handler \
           --memory=512MB \
           --project gabejaystock
-timeout: 600s
+timeout: 120s
