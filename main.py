@@ -153,13 +153,15 @@ def write_trade_log():
         stock = trade.get("Ticker")
         entry_time = trade.get("BuyTime")
         exit_time = trade.get("SellTime")
+        buy_price = trade.get("BuyPrice")
+        sell_price = trade.get("SellPrice")
         profit_loss = trade.get("Profit")
         # Format times if they are datetime objects or ISO strings
         if entry_time and isinstance(entry_time, dt):
             entry_time = entry_time.strftime("%Y-%m-%d %H:%M:%S")
         if exit_time and isinstance(exit_time, dt):
             exit_time = exit_time.strftime("%Y-%m-%d %H:%M:%S")
-        writer.writerow([stock, entry_time, exit_time, profit_loss.item()])
+        writer.writerow([stock, entry_time, exit_time, buy_price, sell_price, profit_loss.item()])
     
     upload_blob_from_string(TRADE_LOG_FILE, output.getvalue(), content_type='text/csv')
     print(f"Trade log updated in {TRADE_LOG_FILE} in bucket {BUCKET_NAME}")
