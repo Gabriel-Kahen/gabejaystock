@@ -10,5 +10,6 @@ steps:
           --allow-unauthenticated \
           --entry-point run_simulation_handler \
           --memory=512MB \
+          --region=us-central1 \
           --project gabejaystock
 timeout: 120s
