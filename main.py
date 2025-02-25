@@ -310,7 +310,10 @@ def run_simulation_handler(request):
     run_simulation()
     return 'TEST', 200
 
+def main():
+    run_simulation()
+
 if __name__ == "__main__":
-    run_simulation()    
+    main()
 
     #add perms for cloud provider
