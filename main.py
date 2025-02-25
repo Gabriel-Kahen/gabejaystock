@@ -308,7 +308,7 @@ def run_simulation():
 
 def run_simulation_handler(request):
     run_simulation()
-    return 'Cycle Complete', 200
+    return 'TEST', 200
 
 if __name__ == "__main__":
     run_simulation()    
