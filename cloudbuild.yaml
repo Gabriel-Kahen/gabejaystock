@@ -1,6 +1,12 @@
 steps:
   - name: 'gcr.io/buildpacks/builder'
-    args: ["build", "-t", "gcr.io/$gabejaystock/run-simulation-job", "."]
+    args:
+      - "build"
+      - "-t"
+      - "gcr.io/gabejaystock/run-simulation-job"
+      - "--env"
+      - "GOOGLE_ENTRYPOINT=python main.py"
+      - "."
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     args:
       - "run"
@@ -8,11 +14,11 @@ steps:
       - "create"
       - "run-simulation-job"
       - "--image"
-      - "gcr.io/$gabejaystock/run-simulation-job"
+      - "gcr.io/gabejaystock/run-simulation-job"
       - "--region"
       - "us-central1"
       - "--project"
-      - "$gabejaystock"
+      - "gabejaystock"
       - "--command"
       - "python main.py"
 timeout: 120s
