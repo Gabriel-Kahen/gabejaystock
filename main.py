@@ -317,21 +317,11 @@ def simulate_cycle(tickers):
     # Save the new open positions to Cloud Storage for the next cycle
     save_open_positions(new_positions)
 
-def run_simulation():
-    tickers = TICKERS  # Using the static ticker list defined above
-    if is_market_open():
-        simulate_cycle(tickers)
-    else:
-        print("Market ain't open")
-
-def run_simulation_handler(request):
-    run_simulation()
-    return 'TEST', 200
-
 def main():
+    tickers = TICKERS
     while(True):
-        if(is_market_open):
-            run_simulation()
+        if(is_market_open()):
+            simulate_cycle(tickers)
         else:
             print("Market not open")
         print("waiting...")
@@ -339,5 +329,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-    #add perms for cloud provider
