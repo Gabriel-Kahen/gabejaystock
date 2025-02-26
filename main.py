@@ -311,6 +311,7 @@ def main():
         simulate_cycle(tickers)
     else:
         print("Market ain't open")
-            
+        simulate_cycle(tickers)
+
 if __name__ == "__main__":
     main()
