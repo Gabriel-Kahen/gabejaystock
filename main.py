@@ -10,15 +10,25 @@ import yfinance as yf
 from datetime import datetime as dt
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
+from get_data import get_data 
 from google.cloud import storage
+import tempfile
 
+# Global variables for simulation
+# These file names now represent the blob names in your Cloud Storage bucket.
 DATA_FILE = "data/yfinance_data.csv"
 TRADE_LOG_FILE = "data/trade_log.csv"
 OPEN_POSITIONS_FILE = "data/open_positions.json"
 BUCKET_NAME = 'gabe-jay-stock'
 
-os.environ["GOOGLE_CLOUD_PROJECT"] = "gabe-jay-stock"
 
+if "GCLOUD_CREDENTIALS" in os.environ and "GOOGLE_APPLICATION_CREDENTIALS" not in os.environ:
+    credentials_json = os.environ["GCLOUD_CREDENTIALS"]
+    with tempfile.NamedTemporaryFile(delete=False, mode='w', suffix='.json') as temp_file:
+        temp_file.write(credentials_json)
+        temp_file_path = temp_file.name
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_file_path
+    
 portfolio = {
     "current_positions": [],  # list of (ticker, buy_time, buy_price)
     "trade_log": []           # list of trade records
@@ -66,16 +76,11 @@ def load_initial_data():
     Loads the CSV file (stored in Cloud Storage) and converts it to long format.
     Expected CSV structure remains the same.
     """
-    
-    get_data()
-    
     csv_text = download_blob_as_string(DATA_FILE)
     # Read header info (first 3 rows)
     header_info = pd.read_csv(io.StringIO(csv_text), nrows=3, header=None)
     n_tickers = 100
     metrics = ["Close", "High", "Low", "Open", "Volume"]
-    
-    
 
     # Extract tickers from row 1 (columns 1 to 1+n_tickers)
     tickers = header_info.iloc[1, 1:1+n_tickers].tolist()
@@ -153,15 +158,13 @@ def write_trade_log():
         stock = trade.get("Ticker")
         entry_time = trade.get("BuyTime")
         exit_time = trade.get("SellTime")
-        buy_price = trade.get("BuyPrice")
-        sell_price = trade.get("SellPrice")
         profit_loss = trade.get("Profit")
         # Format times if they are datetime objects or ISO strings
         if entry_time and isinstance(entry_time, dt):
             entry_time = entry_time.strftime("%Y-%m-%d %H:%M:%S")
         if exit_time and isinstance(exit_time, dt):
             exit_time = exit_time.strftime("%Y-%m-%d %H:%M:%S")
-        writer.writerow([stock, entry_time, exit_time, buy_price, sell_price, profit_loss.item()])
+        writer.writerow([stock, entry_time, exit_time, profit_loss])
     
     upload_blob_from_string(TRADE_LOG_FILE, output.getvalue(), content_type='text/csv')
     print(f"Trade log updated in {TRADE_LOG_FILE} in bucket {BUCKET_NAME}")
@@ -217,20 +220,6 @@ def select_trades(model, df_hist, num_trades=3):
     print("Selected trades for this cycle:")
     print(top_trades[['Ticker', 'Close', 'PredictedReturn']])
     return top_trades
-
-def get_data():
-    # 1. Download the data
-    data = yf.download(TICKERS, period='5d', interval='15m')
-
-    csv_data = data.to_csv(index=True)
-
-    client = storage.Client()
-    bucket = client.bucket(BUCKET_NAME)
-    blob = bucket.blob(DATA_FILE)
-
-    blob.upload_from_string(csv_data, content_type='text/csv')
-
-    print(f"Data uploaded to gs://{BUCKET_NAME}/{DATA_FILE}")
 
 def sell_positions(current_time):
     """
@@ -318,14 +307,11 @@ def simulate_cycle(tickers):
     save_open_positions(new_positions)
 
 def main():
-    tickers = TICKERS
-    while(True):
-        if(is_market_open()):
-            simulate_cycle(tickers)
-        else:
-            print("Market not open")
-        print("waiting...")
-        time.sleep(15 * 60)
-
+    tickers = TICKERS  # Using the static ticker list defined above
+    if is_market_open():
+        simulate_cycle(tickers)
+    else:
+        print("Market ain't open")
+            
 if __name__ == "__main__":
     main()
