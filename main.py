@@ -332,9 +332,8 @@ def main():
         simulate_cycle(tickers)
     else:
         print("Market ain't open")
-        simulate_cycle(tickers)
     print("Waiting...")
-    time.sleep(1 * 60)
+    time.sleep(3 * 60)
 
 if __name__ == "__main__":
     main()
