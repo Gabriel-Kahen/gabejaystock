@@ -33,7 +33,6 @@ portfolio = {
     "trade_log": []           # list of trade records
 }
 
-
 def get_data():
     # 1. Download the data
     data = yf.download(TICKERS, period='5d', interval='15m')
@@ -62,10 +61,6 @@ TICKERS = [
     "BMY", "MMC", "PLD", "LRCX", "MU", "INTC", "ANET", "KLAC", "CB",
     "SO", "ICE"
 ]
-
-############################################
-# Helper functions for Cloud Storage I/O
-############################################
 
 def download_blob_as_string(blob_name):
     """Download a blob's content as a string from the bucket."""
@@ -268,7 +263,7 @@ def is_market_open():
     U.S. stock market is typically open Monday-Friday, 9:30 AM to 4:00 PM Eastern Time.
     """
     now = dt.now(pytz.timezone('US/Eastern'))
-    if now.weekday() >= 5:  # Saturday or Sunday
+    if now.weekday() >= 5:
         return False
     market_open = now.replace(hour=9, minute=30, second=0, microsecond=0)
     market_close = now.replace(hour=16, minute=0, second=0, microsecond=0)
@@ -333,7 +328,7 @@ def main():
     else:
         print("Market ain't open")
     print("Waiting...")
-    time.sleep(4 * 60)
+    time.sleep(15 * 60)
 
 if __name__ == "__main__":
     main()
