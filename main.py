@@ -328,7 +328,7 @@ def main():
     else:
         print("Market ain't open")
     print("Waiting...")
-    time.sleep(15 * 60)
+    time.sleep(15 * 60 - 28)
 
 if __name__ == "__main__":
     main()
