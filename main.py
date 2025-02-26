@@ -10,7 +10,6 @@ import yfinance as yf
 from datetime import datetime as dt
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
-from get_data import get_data 
 from google.cloud import storage
 import tempfile
 
