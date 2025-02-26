@@ -33,6 +33,21 @@ portfolio = {
     "trade_log": []           # list of trade records
 }
 
+
+def get_data():
+    # 1. Download the data
+    data = yf.download(TICKERS, period='5d', interval='15m')
+
+    csv_data = data.to_csv(index=True)
+
+    client = storage.Client()
+    bucket = client.bucket(BUCKET_NAME)
+    blob = bucket.blob(DATA_FILE)
+
+    blob.upload_from_string(csv_data, content_type='text/csv')
+
+    print(f"Data uploaded to gs://{BUCKET_NAME}/{DATA_FILE}")
+
 TICKERS = [
     "AAPL", "NVDA", "MSFT", "AMZN", "META", "GOOGL", "AVGO", "TSLA",
     "BRK-B", "GOOG", "JPM", "LLY", "V", "XOM", "COST", "MA", "UNH",
@@ -75,6 +90,7 @@ def load_initial_data():
     Loads the CSV file (stored in Cloud Storage) and converts it to long format.
     Expected CSV structure remains the same.
     """
+    get_data()
     csv_text = download_blob_as_string(DATA_FILE)
     # Read header info (first 3 rows)
     header_info = pd.read_csv(io.StringIO(csv_text), nrows=3, header=None)
@@ -312,6 +328,7 @@ def main():
     else:
         print("Market ain't open")
         simulate_cycle(tickers)
+    time.sleep(1 * 60)
 
 if __name__ == "__main__":
     main()
