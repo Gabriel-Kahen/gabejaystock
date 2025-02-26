@@ -147,48 +147,51 @@ def load_open_positions():
 
 def write_trade_log():
     """
-    Writes the trade log from the portfolio to the trade_log.csv blob.
-    This function downloads the current trade log if it exists, appends new records,
-    and then uploads the updated CSV.
+    Appends new trade records from portfolio['trade_log'] to the trade_log.csv blob in Cloud Storage.
+    If the CSV doesn't exist or is empty, a header row is written first.
     """
-    header = ["Stock", "Entry Time", "Exit Time", "Profit/Loss"]
+    header = ["Stock", "Entry Time", "Exit Time", "Buy Price", "Sell Price", "Profit/Loss"]
 
-    # Try to download the existing trade log; if not found, start fresh.
     try:
         existing_csv = download_blob_as_string(TRADE_LOG_FILE)
-        file_lines = existing_csv.splitlines()
-        file_empty = len(file_lines) == 0
-        # Convert existing CSV lines into a list (if needed later)
     except Exception:
-        file_empty = True
+        existing_csv = ""
 
+    # Use StringIO to build the new CSV content.
     output = io.StringIO()
-    writer = csv.writer(output)
-    # Write header if file is empty
-    if file_empty:
-        writer.writerow(header)
 
-    # Write each trade record from portfolio.trade_log
+    # If there's no existing content (or it's just whitespace), write the header.
+    if not existing_csv.strip():
+        writer = csv.writer(output)
+        writer.writerow(header)
+    else:
+        # Write the existing CSV content into our output.
+        output.write(existing_csv)
+        # Ensure the existing content ends with a newline.
+        if not existing_csv.endswith("\n"):
+            output.write("\n")
+        writer = csv.writer(output)
+
+    # Append new trade records.
     for trade in portfolio["trade_log"]:
         stock = trade.get("Ticker")
         entry_time = trade.get("BuyTime")
         exit_time = trade.get("SellTime")
-        profit_loss = trade.get("Profit")
         buy_price = trade.get("BuyPrice")
         sell_price = trade.get("SellPrice")
-        # Format times if they are datetime objects or ISO strings
+        profit_loss = trade.get("Profit")
+
+        # Format times if they are datetime objects
         if entry_time and isinstance(entry_time, dt):
             entry_time = entry_time.strftime("%Y-%m-%d %H:%M:%S")
         if exit_time and isinstance(exit_time, dt):
             exit_time = exit_time.strftime("%Y-%m-%d %H:%M:%S")
-        writer.writerow([stock, entry_time, exit_time, buy_price, sell_price, profit_loss.item()])
-    
-    upload_blob_from_string(TRADE_LOG_FILE, output.getvalue(), content_type='text/csv')
-    print(f"Trade log updated in {TRADE_LOG_FILE} in bucket {BUCKET_NAME}")
 
-############################################
-# Existing functions (mostly unchanged)
-############################################
+        writer.writerow([stock, entry_time, exit_time, buy_price, sell_price.item(), profit_loss.item()])
+
+    # Upload the new CSV content back to Cloud Storage.
+    upload_blob_from_string(TRADE_LOG_FILE, output.getvalue(), content_type='text/csv')
+    print(f"Trade log updated (appended) in {TRADE_LOG_FILE} in bucket {BUCKET_NAME}")
 
 def get_current_price(ticker):
     """
