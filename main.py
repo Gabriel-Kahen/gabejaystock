@@ -275,7 +275,7 @@ def simulate_cycle(tickers):
     if previous_positions:
         for position in previous_positions:
             ticker = position["Ticker"]
-            buy_price = position["BuyPrice"]
+            buy_price = float(position["BuyPrice"])
             buy_time = dt.fromisoformat(position["BuyTime"])
             current_price = get_current_price(ticker)
             profit = current_price - buy_price
