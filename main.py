@@ -189,10 +189,7 @@ def write_trade_log():
     print(f"Trade log updated (appended) in {TRADE_LOG_FILE} in bucket {BUCKET_NAME}")
 
 def get_current_price(ticker):
-    """
-    Retrieves the latest close price for a given ticker using yfinance.
-    """
-    df = yf.download(ticker, period='1d', interval='15m')
+    df = yf.download(ticker, period='1d', interval='1m')
     return df["Close"].iloc[-1]
 
 def train_model(df_hist):
@@ -309,7 +306,7 @@ def simulate_cycle(tickers):
     new_positions = []
     for _, row in top_trades.iterrows():
         ticker = row['Ticker']
-        buy_price = row['Close']
+        buy_price = get_current_price(ticker)
         new_position = {
             "Ticker": ticker,
             "BuyTime": current_time.isoformat(),
