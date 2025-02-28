@@ -302,7 +302,7 @@ def execute_trades():
         })
         print(f"Bought {ticker} at {buy_price} on {buy_time}")
     
-    wait_seconds = 15 * 60 - 17
+    wait_seconds = 15 * 60 - 16
     print(f"\nWaiting {wait_seconds} seconds until Sell Phase...")
     time.sleep(wait_seconds)
     
