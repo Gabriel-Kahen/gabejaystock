@@ -150,16 +150,17 @@ def load_all_data():
 def train_model(df_hist):
     """
     Trains a RandomForestRegressor model on the historical data.
-    Computes features (Return, FutureReturn, SMA_3, Momentum) and returns the trained model.
+    Computes features (Return, FutureReturn, SMA_20, Momentum, Bolinger Width) and returns the trained model.
     """
     print("Training model using historical data...")
     df_hist['Return'] = df_hist.groupby('Ticker')['Close'].pct_change()
     df_hist['FutureReturn'] = df_hist.groupby('Ticker')['Return'].shift(-1)
-    df_hist['SMA_3'] = df_hist.groupby('Ticker')['Close'].transform(lambda x: x.rolling(window=3).mean())
-    df_hist['Momentum'] = df_hist.groupby('Ticker')['Close'].transform(lambda x: x.diff(periods=3))
+    df_hist['SMA_20'] = df_hist.groupby('Ticker')['Close'].transform(lambda x: x.rolling(window=20).mean())
+    df_hist['Momentum'] = df_hist.groupby('Ticker')['Close'].transform(lambda x: x.diff(periods=5))
+    df_hist['Bolinger Width'] = df_hist.groupby('Ticker')['Close'].transform(lambda x: (x.rolling(window=30).mean() + (2*x.rolling(window=30).std())) - (x.rolling(window=30).mean() - (2*x.rolling(window=30).std())))
     df_hist.dropna(inplace=True)
     
-    features = ['Close', 'Return', 'SMA_3', 'Momentum']
+    features = ['Close', 'Return', 'SMA_20', 'Momentum', 'Bolinger Width']
     target = 'FutureReturn'
     X = df_hist[features]
     y = df_hist[target]
@@ -182,10 +183,11 @@ def select_trades(model, df_hist, num_trades=3):
     
     # Recompute features on the latest data if necessary
     latest_data['Return'] = latest_data.groupby('Ticker')['Close'].pct_change().fillna(0)
-    latest_data['SMA_3'] = latest_data.groupby('Ticker')['Close'].transform(lambda x: x.rolling(window=3).mean()).fillna(latest_data['Close'])
-    latest_data['Momentum'] = latest_data.groupby('Ticker')['Close'].transform(lambda x: x.diff(periods=3)).fillna(0)
+    latest_data['SMA_20'] = latest_data.groupby('Ticker')['Close'].transform(lambda x: x.rolling(window=20).mean()).fillna(latest_data['Close'])
+    latest_data['Momentum'] = latest_data.groupby('Ticker')['Close'].transform(lambda x: x.diff(periods=5)).fillna(0)
+    latest_data['Bolinger Width'] = latest_data.groupby('Ticker')['Close'].transform(lambda x: (x.rolling(window=30).mean() + (2*x.rolling(window=30).std())) - (x.rolling(window=30).mean() - (2*x.rolling(window=30).std())))
     
-    features = ['Close', 'Return', 'SMA_3', 'Momentum']
+    features = ['Close', 'Return', 'SMA_20', 'Momentum', 'Bolinger Width']
     latest_data['PredictedReturn'] = model.predict(latest_data[features])
     
     top_trades = latest_data.nlargest(num_trades, 'PredictedReturn')
